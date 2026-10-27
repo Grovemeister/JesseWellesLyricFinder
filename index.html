@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jesse Welles Lyrics Finder</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IM+Fell+English:ital@0;1&display=swap');
+
+:root {
+  --paper:      #f4eed8;
+  --paper-mid:  #ede4c4;
+  --paper-dark: #ddd0a8;
+  --ink:        #18130c;
+  --ink-mid:    #3d3020;
+  --ink-faded:  #7a6340;
+  --ink-light:  #a89060;
+  --rule:       #c8b07a;
+  --red:        #7a1a10;
+  --gold:       #b8902a;
+  --hl:         #ede87a;
+  --panel-bg:   #1a1208;
+  --panel-paper:#f0e8cc;
+  --cover-color:#4a6b3a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  background: var(--panel-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, #2a1a06 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, #1a0e04 0%, transparent 50%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem 5rem;
+}
+
+.page {
+  position: relative;
+  background: var(--paper);
+  width: 100%;
+  max-width: 700px;
+  padding: 2.5rem 3rem 3rem;
+  box-shadow:
+    inset 0 0 80px rgba(160,120,40,0.08),
+    6px 8px 30px rgba(0,0,0,0.55),
+    0 0 80px rgba(0,0,0,0.4);
+  align-self: flex-start;
+}
+.page::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image: repeating-linear-gradient(
+    transparent, transparent 27px,
+    rgba(160,120,60,0.18) 27px, rgba(160,120,60,0.18) 28px
+  );
+}
+.page::after {
+  content:''; position:absolute; top:0; bottom:0; left:3.5rem; width:1.5px;
+  background: rgba(180,60,40,0.22); pointer-events:none;
+}
+
+/* ── HEADER ─────────────────────────────────────── */
+header {
+  text-align:center; margin-bottom:1.8rem; padding-bottom:1.1rem;
+  border-bottom:2px solid var(--ink-mid); position:relative;
+}
+header::after {
+  content:'✦'; position:absolute; bottom:-0.65em; left:50%;
+  transform:translateX(-50%); background:var(--paper);
+  padding:0 0.5rem; color:var(--ink-mid); font-size:0.85rem;
+}
+.site-title {
+  font-family:'Special Elite','Courier New',monospace;
+  font-size:1.9rem; letter-spacing:0.05em; color:var(--ink); line-height:1.1;
+}
+.site-sub {
+  font-family:'IM Fell English',serif; font-style:italic;
+  font-size:0.82rem; color:var(--ink-faded); margin-top:0.3rem; letter-spacing:0.08em;
+}
+
+/* ── LOAD ────────────────────────────────────────── */
+.load-strip {
+  border:1.5px dashed var(--rule); background:rgba(200,176,120,0.1);
+  padding:0.75rem 1rem; display:flex; align-items:center; gap:0.75rem;
+  flex-wrap:wrap; margin-bottom:1.2rem;
+}
+.load-status { font-family:'Special Elite',monospace; font-size:0.75rem; color:var(--ink-faded); flex:1; }
+.load-status.ok  { color:#3a6030; }
+.load-status.err { color:var(--red); }
+#fileInput { display:none; }
+
+/* ── SEARCH ──────────────────────────────────────── */
+.search-label {
+  font-family:'Special Elite',monospace; font-size:0.68rem;
+  letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-faded);
+  display:block; margin-bottom:0.3rem;
+}
+.search-row { display:flex; gap:0.4rem; align-items:stretch; }
+#q {
+  flex:1; font-family:'Special Elite','Courier New',monospace; font-size:1.15rem;
+  background:var(--paper-mid); border:1.5px solid var(--ink-faded); border-radius:0;
+  padding:0.5rem 0.7rem; color:var(--ink); outline:none;
+  box-shadow:inset 1px 1px 4px rgba(0,0,0,0.1); transition:border-color 0.1s;
+}
+#q:focus { border-color:var(--ink); background:var(--paper-dark); }
+#q::placeholder { color:var(--ink-light); font-style:italic; }
+.btn {
+  font-family:'Special Elite',monospace; font-size:0.72rem; letter-spacing:0.1em;
+  text-transform:uppercase; background:var(--ink); color:var(--paper);
+  border:none; padding:0.5rem 0.9rem; cursor:pointer; transition:background 0.12s;
+}
+.btn:hover { background:var(--ink-mid); }
+.btn-ghost {
+  background:transparent; color:var(--ink-faded);
+  border:1.5px solid var(--ink-faded);
+}
+.btn-ghost:hover { background:var(--ink-faded); color:var(--paper); }
+.opts { display:flex; gap:1.2rem; margin-top:0.6rem; flex-wrap:wrap; }
+.opt {
+  font-family:'Special Elite',monospace; font-size:0.68rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--ink-faded);
+  display:flex; align-items:center; gap:0.35rem; cursor:pointer;
+}
+.opt input { accent-color:var(--ink); width:13px; height:13px; }
+
+/* ── BROWSE BAR ──────────────────────────────────── */
+.browse-row {
+  display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;
+  margin-top:0.8rem; padding-top:0.7rem; border-top:1px solid var(--rule);
+}
+.browse-label {
+  font-family:'Special Elite',monospace; font-size:0.65rem; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--ink-light);
+}
+.btn-sm {
+  font-family:'Special Elite',monospace; font-size:0.62rem; letter-spacing:0.09em;
+  text-transform:uppercase; padding:0.25rem 0.6rem;
+  border:1.5px solid var(--ink-faded); background:transparent; color:var(--ink-faded);
+  cursor:pointer; transition:background 0.1s, color 0.1s;
+}
+.btn-sm:hover, .btn-sm.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+/* ── RESULTS ─────────────────────────────────────── */
+.results-hdr {
+  font-family:'Special Elite',monospace; font-size:0.65rem; letter-spacing:0.18em;
+  text-transform:uppercase; color:var(--ink-light); padding:0.5rem 0 0.4rem;
+  border-bottom:1px solid var(--rule); margin:1.2rem 0 0.8rem; display:none;
+}
+.idle-msg, .empty-msg {
+  font-style:italic; color:var(--ink-light); font-size:0.88rem; padding:1rem 0;
+}
+
+/* song group */
+.sg { margin-bottom:1.4rem; }
+.sg + .sg { border-top:1px solid var(--rule); padding-top:1.2rem; }
+.sg-head { display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.35rem; flex-wrap:wrap; }
+.sg-name {
+  font-family:'Special Elite',monospace; font-size:0.76rem; letter-spacing:0.09em;
+  text-transform:uppercase; color:var(--ink-mid); cursor:pointer;
+  border-bottom:1px dashed transparent; transition:border-color 0.12s;
+}
+.sg-name:hover { border-bottom-color:var(--ink-mid); }
+.sg-tag {
+  font-family:'Special Elite',monospace; font-size:0.55rem; letter-spacing:0.1em;
+  text-transform:uppercase; border:1px solid currentColor;
+  padding:0.05rem 0.3rem; color:var(--ink-light);
+}
+.sg-tag.cover { color:var(--cover-color); }
+.sg-count { font-family:'Special Elite',monospace; font-size:0.63rem; color:var(--ink-light); margin-left:auto; }
+
+/* lyric lines */
+.ll {
+  font-family:'Libre Baskerville',serif; font-size:0.9rem; color:var(--ink);
+  padding:0.18rem 0 0.18rem 1rem; border-left:2px solid transparent;
+  line-height:1.55; transition:border-color 0.1s, background 0.1s;
+}
+.ll:hover { border-left-color:var(--rule); background:rgba(200,176,100,0.12); }
+.ll mark { background:var(--hl); color:var(--ink); padding:0 1px; font-weight:700; }
+
+/* transcript line */
+.tl {
+  display:flex; align-items:baseline; gap:0.5rem;
+  padding:0.18rem 0 0.18rem 1rem; border-left:2px solid transparent;
+  transition:border-color 0.1s, background 0.1s;
+}
+.tl:hover { border-left-color:var(--gold); background:rgba(184,144,42,0.08); }
+.tl-text {
+  font-family:'Libre Baskerville',serif; font-size:0.88rem; color:var(--ink-mid);
+  flex:1; line-height:1.5; font-style:italic;
+}
+.tl-text mark { background:var(--hl); color:var(--ink); font-weight:700; font-style:normal; }
+.tc-link {
+  font-family:'Special Elite',monospace; font-size:0.65rem; color:var(--red);
+  text-decoration:none; white-space:nowrap; opacity:0.75; transition:opacity 0.1s;
+}
+.tc-link:hover { opacity:1; text-decoration:underline; }
+
+.section-label {
+  font-family:'Special Elite',monospace; font-size:0.6rem; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--ink-light); margin:0.5rem 0 0.2rem 1rem;
+}
+.summary {
+  font-family:'Special Elite',monospace; font-size:0.65rem; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--ink-light); margin-top:1rem;
+  padding-top:0.75rem; border-top:1px solid var(--rule);
+}
+
+/* ── SONG LIST (browse mode) ─────────────────────── */
+.song-list-item {
+  display:flex; align-items:baseline; gap:0.6rem; padding:0.35rem 0;
+  border-bottom:1px solid rgba(200,176,100,0.3); cursor:pointer;
+  transition:background 0.1s;
+}
+.song-list-item:last-child { border-bottom:none; }
+.song-list-item:hover { background:rgba(200,176,100,0.12); }
+.sli-name {
+  font-family:'Special Elite',monospace; font-size:0.73rem; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-mid); flex:1;
+}
+.sli-tag {
+  font-family:'Special Elite',monospace; font-size:0.53rem; letter-spacing:0.1em;
+  text-transform:uppercase; border:1px solid currentColor; padding:0.05rem 0.3rem;
+  color:var(--ink-light);
+}
+.sli-tag.cover { color:var(--cover-color); }
+.sli-icons { display:flex; gap:0.3rem; }
+.sli-icon {
+  font-family:'Special Elite',monospace; font-size:0.53rem; color:var(--ink-light);
+  opacity:0.6;
+}
+.sli-icon.has { opacity:1; color:var(--gold); }
+
+/* ── OVERLAY + PANEL ─────────────────────────────── */
+.overlay {
+  position:fixed; inset:0; background:rgba(10,7,2,0.65);
+  backdrop-filter:blur(2px); z-index:100;
+  opacity:0; pointer-events:none; transition:opacity 0.25s;
+}
+.overlay.open { opacity:1; pointer-events:all; }
+
+/*
+  Panel: ~1/3 of viewport width, min 320px, max 560px.
+  Always leaves the main page visible behind it.
+*/
+.detail-panel {
+  position:fixed; top:0; right:0; bottom:0;
+  width: clamp(320px, 33vw, 560px);
+  background:var(--panel-paper);
+  background-image: repeating-linear-gradient(
+    transparent, transparent 27px,
+    rgba(160,120,60,0.13) 27px, rgba(160,120,60,0.13) 28px
+  );
+  box-shadow:-6px 0 40px rgba(0,0,0,0.6); z-index:101;
+  transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.detail-panel.open { transform:translateX(0); }
+
+.dp-hdr {
+  padding:1.6rem 2rem 1rem; border-bottom:2px solid var(--ink-mid);
+  position:relative; flex-shrink:0; background:var(--panel-paper);
+}
+.dp-close {
+  position:absolute; top:0.9rem; right:1.1rem;
+  font-family:'Special Elite',monospace; font-size:0.68rem; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--ink-faded); cursor:pointer;
+  border:none; background:none; padding:0.2rem 0.4rem;
+  border-bottom:1px solid transparent; transition:border-color 0.1s, color 0.1s;
+}
+.dp-close:hover { border-bottom-color:var(--ink-mid); color:var(--ink); }
+
+.dp-title {
+  font-family:'IM Fell English',serif; font-size:1.65rem; color:var(--ink);
+  line-height:1.15; margin-right:3rem;
+}
+.dp-meta { display:flex; gap:0.8rem; margin-top:0.5rem; flex-wrap:wrap; align-items:center; }
+.dp-by   { font-family:'Special Elite',monospace; font-size:0.7rem; letter-spacing:0.1em; color:var(--ink-faded); }
+.dp-date { font-family:'Special Elite',monospace; font-size:0.68rem; color:var(--ink-light); }
+.dp-tag  {
+  font-family:'Special Elite',monospace; font-size:0.6rem; letter-spacing:0.12em;
+  text-transform:uppercase; border:1px solid currentColor; padding:0.1rem 0.4rem;
+  color:var(--ink-light);
+}
+.dp-tag.cover { color:var(--cover-color); }
+.cover-artist {
+  font-family:'Libre Baskerville',serif; font-style:italic;
+  font-size:0.72rem; color:var(--cover-color); margin-top:0.15rem;
+}
+.incomplete-note {
+  font-family:'Special Elite',monospace; font-size:0.63rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--red); opacity:0.7; margin-top:0.4rem;
+}
+
+/* tab bar */
+.dp-tabs { display:flex; gap:0; margin-top:0.75rem; overflow-x:auto; }
+.tab-btn {
+  font-family:'Special Elite',monospace; font-size:0.65rem; letter-spacing:0.1em;
+  text-transform:uppercase; background:var(--paper-mid); color:var(--ink-faded);
+  border:1.5px solid var(--rule); padding:0.3rem 0.75rem; cursor:pointer;
+  transition:background 0.1s, color 0.1s; white-space:nowrap; border-right:none;
+}
+.tab-btn:last-child { border-right:1.5px solid var(--rule); }
+.tab-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.tab-btn.jesse-tab { border-color:var(--gold); color:var(--gold); }
+.tab-btn.jesse-tab.active { background:var(--gold); color:var(--paper); border-color:var(--gold); }
+
+.dp-body {
+  flex:1; overflow-y:auto; padding:1.5rem 2rem 2rem; scroll-behavior:smooth;
+}
+
+/* lyrics */
+.dp-break { height:0.9em; }
+.dp-line {
+  font-family:'IM Fell English',serif; font-size:1.05rem; color:var(--ink);
+  line-height:1.7;
+}
+.dp-line mark { background:var(--hl); }
+
+.jesse-badge {
+  display:inline-block; font-family:'Special Elite',monospace;
+  font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase;
+  border:1px solid var(--gold); color:var(--gold);
+  padding:0.15rem 0.4rem; margin-bottom:0.75rem;
+}
+
+/* embed */
+.dp-embed {
+  position:relative; width:100%; padding-bottom:56.25%;
+  margin-bottom:1.1rem; background:#000; flex-shrink:0;
+}
+.dp-embed iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+
+/* variations tab */
+.var-section { margin-bottom:1.2rem; }
+.var-section-title {
+  font-family:'Special Elite',monospace; font-size:0.6rem; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--ink-light);
+  border-bottom:1px solid var(--rule); padding-bottom:0.3rem; margin-bottom:0.5rem;
+}
+.var-row { padding:0.3rem 0; border-bottom:1px solid rgba(200,176,100,0.2); }
+.var-row:last-child { border-bottom:none; }
+.var-link {
+  font-family:'Special Elite',monospace; font-size:0.68rem; color:var(--red);
+  text-decoration:none; display:block;
+}
+.var-link:hover { text-decoration:underline; }
+.var-label {
+  font-family:'Libre Baskerville',serif; font-size:0.73rem; font-style:italic;
+  color:var(--ink-faded); display:block; margin-top:0.1rem;
+}
+
+/* timecodes */
+.dp-tc-section { margin-top:1.2rem; padding-top:1rem; border-top:1px solid var(--rule); }
+.dp-tc-title {
+  font-family:'Special Elite',monospace; font-size:0.65rem; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--ink-light); margin-bottom:0.5rem;
+}
+.dp-tc-row {
+  display:flex; align-items:baseline; gap:0.5rem; padding:0.18rem 0;
+  border-bottom:1px solid rgba(200,176,100,0.3);
+}
+.dp-tc-row:last-child { border-bottom:none; }
+.dp-tc-text {
+  font-family:'Libre Baskerville',serif; font-style:italic; font-size:0.85rem;
+  color:var(--ink-mid); flex:1;
+}
+.dp-tc-text mark { background:var(--hl); font-style:normal; font-weight:700; }
+.dp-tc-link {
+  font-family:'Special Elite',monospace; font-size:0.65rem; color:var(--red);
+  text-decoration:none; white-space:nowrap;
+}
+.dp-tc-link:hover { text-decoration:underline; }
+
+@media(max-width:860px) {
+  .detail-panel { width: clamp(280px, 50vw, 560px); }
+}
+@media(max-width:560px) {
+  .page { padding:1.2rem 1rem 2rem; }
+  .page::after { left:2.2rem; }
+  .site-title { font-size:1.4rem; }
+  .detail-panel { width: calc(100vw - 60px); }
+  .dp-hdr, .dp-body { padding-left:1.2rem; padding-right:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="site-title">Jesse Welles</div>
+    <div class="site-sub">Lyric Concordance &amp; Word Finder</div>
+  </header>
+
+  <div class="load-strip">
+    <button class="btn btn-ghost" onclick="document.getElementById('fileInput').click()">Load lyrics JSON</button>
+    <input type="file" id="fileInput" accept=".json" onchange="loadJSON(event)">
+    <div class="load-status" id="loadStatus">
+      No lyrics loaded — run scrape_jesse_welles.py, then load jesse_welles_lyrics.json
+    </div>
+  </div>
+
+  <label class="search-label" for="q">Search lyrics &amp; transcripts</label>
+  <div class="search-row">
+    <input type="text" id="q" placeholder="word, line, title, or phrase…"
+           oninput="schedSearch()" onkeydown="if(event.key==='Escape')clearQ()">
+    <button class="btn btn-ghost" onclick="clearQ()">Clear</button>
+  </div>
+  <div class="opts">
+    <label class="opt"><input type="checkbox" id="optCase" onchange="schedSearch()"> Case sensitive</label>
+    <label class="opt"><input type="checkbox" id="optWhole" onchange="schedSearch()"> Whole word</label>
+    <label class="opt"><input type="checkbox" id="optOrig" onchange="schedSearch()"> Originals only</label>
+    <label class="opt"><input type="checkbox" id="optTrans" onchange="schedSearch()" checked> Include transcripts</label>
+  </div>
+
+  <div class="browse-row">
+    <span class="browse-label">Browse:</span>
+    <button class="btn-sm" id="btnAll"  onclick="showAll()">All songs</button>
+    <button class="btn-sm" id="btnOrig" onclick="showOriginals()">Originals</button>
+    <button class="btn-sm" id="btnCov"  onclick="showCovers()">Covers</button>
+    <button class="btn-sm" id="btnMiss" onclick="showMissing()">Missing video</button>
+  </div>
+
+  <div class="results-hdr" id="rHdr"></div>
+  <div id="results"><p class="idle-msg">Load a lyrics file, then start searching — or browse by category above.</p></div>
+</div>
+
+<!-- OVERLAY + PANEL -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="dp-hdr">
+    <button class="dp-close" onclick="closePanel()">✕ Close</button>
+    <div class="dp-title"    id="dpTitle"></div>
+    <div class="dp-meta">
+      <span class="dp-by">Jesse Welles</span>
+      <span class="dp-date" id="dpDate"></span>
+      <span class="dp-tag"  id="dpTag"></span>
+    </div>
+    <div class="cover-artist"    id="dpCoverArtist"></div>
+    <div class="incomplete-note" id="dpIncomplete"></div>
+    <div class="dp-tabs" id="dpTabs"></div>
+  </div>
+  <div class="dp-body" id="dpBody"></div>
+</div>
+
+<script>
+let songs = [];
+let currentSearch = '';
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+
+function xss(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function mkRx(term) {
+  const cs = document.getElementById('optCase').checked;
+  const ww = document.getElementById('optWhole').checked;
+  let p = term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  if (ww) p = `\\b${p}\\b`;
+  return new RegExp(p, cs ? 'g' : 'gi');
+}
+function hl(text, rx) {
+  rx.lastIndex = 0;
+  return xss(text).replace(rx, m => `<mark>${m}</mark>`);
+}
+function fmtTime(s) {
+  s = Math.floor(s); const m = Math.floor(s/60), h = Math.floor(m/60);
+  if (h) return `${h}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  return `${m}:${String(s%60).padStart(2,'0')}`;
+}
+function extractVid(url) {
+  const m = (url||'').match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+function shortUrl(url) {
+  return (url||'').replace('https://www.youtube.com/watch?v=','youtu.be/');
+}
+function parseOriginal(v) {
+  if (v === null || v === undefined) return true;
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'number')  return v !== 0;
+  if (typeof v === 'string') {
+    const lc = v.trim().toLowerCase();
+    if (lc === 'false' || lc === 'no' || lc === '0') return false;
+    return true;
+  }
+  return Boolean(v);
+}
+
+// ── Load ──────────────────────────────────────────────────────────────────────
+
+function loadJSON(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const st = document.getElementById('loadStatus');
+  st.className = 'load-status'; st.textContent = 'Loading…';
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('Expected JSON array');
+
+      songs = data.map(s => {
+        if (!s.versions || !s.versions.length) {
+          s.versions = [{
+            id: 'main', label: 'Main', source: 'jessewellesworld',
+            video_id: (s.video_urls||[])[0] ? extractVid((s.video_urls||[])[0]) : null,
+            video_url: (s.video_urls||[])[0] || null,
+            lines: s.lines || [],
+            jesse_wrote: false,
+          }];
+        }
+        return {
+          title:             s.title || 'Untitled',
+          subtitle:          s.subtitle || '',
+          slug:              s.slug || '',
+          url:               s.url || '',
+          date:              s.date || '',
+          era:               s.era || '',
+          is_original:       parseOriginal(s.is_original),
+          cover_artist:      s.cover_artist || '',
+          fan_annotations:   s.fan_annotations || s.jesse_notes || '',
+          versions:          s.versions,
+          video_urls:        s.video_urls || [],
+          video_transcripts: s.video_transcripts || [],
+          completeness:      s.completeness || {},
+        };
+      });
+
+      const totalLines  = songs.reduce((n,s) => n + s.versions.reduce((m,v) => m + v.lines.length, 0), 0);
+      const totalSegs   = songs.reduce((n,s) => n + s.video_transcripts.reduce((m,t) => m + t.segments.length, 0), 0);
+      const jesseSongs  = songs.filter(s => s.versions.some(v => v.jesse_wrote)).length;
+      const covers      = songs.filter(s => !s.is_original).length;
+      const missing     = songs.filter(s => !s.completeness.has_lyrics).length;
+
+      st.className = 'load-status ok';
+      st.textContent =
+        `✓ ${songs.length} songs · ${totalLines.toLocaleString()} lyric lines`
+        + (covers     ? ` · ${covers} covers`                               : '')
+        + (totalSegs  ? ` · ${totalSegs.toLocaleString()} transcript segs`  : '')
+        + (jesseSongs ? ` · ${jesseSongs} with Jesse's own lyrics`          : '')
+        + (missing    ? ` · ⚠ ${missing} incomplete`                        : '');
+
+      document.getElementById('results').innerHTML =
+        '<p class="idle-msg">Start typing to search, or use the browse buttons above.</p>';
+      document.getElementById('rHdr').style.display = 'none';
+      document.getElementById('q').focus();
+    } catch (err) {
+      st.className = 'load-status err';
+      st.textContent = `Error: ${err.message}`;
+    }
+  };
+  r.readAsText(file);
+}
+
+// ── Browse modes ──────────────────────────────────────────────────────────────
+
+function clearBrowseActive() {
+  ['btnAll','btnOrig','btnCov','btnMiss'].forEach(id =>
+    document.getElementById(id).classList.remove('active'));
+}
+
+function renderSongList(subset, headerText) {
+  clearBrowseActive();
+  document.getElementById('q').value = '';
+  currentSearch = '';
+  const hEl = document.getElementById('rHdr');
+  hEl.style.display = 'block';
+  hEl.textContent = headerText;
+
+  if (!subset.length) {
+    document.getElementById('results').innerHTML = '<p class="empty-msg">None found.</p>';
+    return;
+  }
+
+  const html = subset.map(s => {
+    const idx = songs.indexOf(s);
+    const c = s.completeness || {};
+    const hasLyrics = c.has_lyrics
+      ? '<span class="sli-icon has" title="Has lyrics">♪</span>'
+      : '<span class="sli-icon" title="No lyrics">♪</span>';
+    const hasVideo = c.has_video
+      ? '<span class="sli-icon has" title="Has video">▶</span>'
+      : '<span class="sli-icon" title="No video">▶</span>';
+    const tagHtml = s.is_original
+      ? ''
+      : `<span class="sli-tag cover">Cover</span>`;
+
+    return `<div class="song-list-item" onclick="openPanel(${idx})">
+      <span class="sli-name">${xss(s.title)}</span>
+      ${tagHtml}
+      <span class="sli-icons">${hasLyrics}${hasVideo}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('results').innerHTML = html;
+}
+
+function showAll() {
+  document.getElementById('btnAll').classList.add('active');
+  if (!songs.length) return;
+  renderSongList([...songs].sort((a,b) => a.title.localeCompare(b.title)), `All songs (${songs.length})`);
+}
+function showOriginals() {
+  document.getElementById('btnOrig').classList.add('active');
+  if (!songs.length) return;
+  const orig = songs.filter(s => s.is_original).sort((a,b) => a.title.localeCompare(b.title));
+  renderSongList(orig, `Originals (${orig.length})`);
+}
+function showCovers() {
+  document.getElementById('btnCov').classList.add('active');
+  if (!songs.length) return;
+  const covers = songs.filter(s => !s.is_original).sort((a,b) => a.title.localeCompare(b.title));
+  renderSongList(covers, `Covers (${covers.length})`);
+}
+function showMissing() {
+  document.getElementById('btnMiss').classList.add('active');
+  if (!songs.length) return;
+  const miss = songs.filter(s => !s.completeness.has_video).sort((a,b) => a.title.localeCompare(b.title));
+  renderSongList(miss, `Missing video links (${miss.length})`);
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+
+let _t = null;
+function schedSearch() { clearTimeout(_t); _t = setTimeout(doSearch, 80); }
+function clearQ() {
+  document.getElementById('q').value = '';
+  doSearch();
+  document.getElementById('q').focus();
+}
+
+function doSearch() {
+  const term = document.getElementById('q').value.trim();
+  currentSearch = term;
+  const rEl = document.getElementById('results');
+  const hEl = document.getElementById('rHdr');
+  const origOnly = document.getElementById('optOrig').checked;
+  const useTrans = document.getElementById('optTrans').checked;
+
+  if (!term) {
+    if (!songs.length) {
+      rEl.innerHTML = '<p class="idle-msg">Load a lyrics file, then start searching.</p>';
+    } else {
+      rEl.innerHTML = '<p class="idle-msg">Start typing to search, or use the browse buttons above.</p>';
+    }
+    hEl.style.display = 'none';
+    clearBrowseActive();
+    return;
+  }
+  if (!songs.length) {
+    rEl.innerHTML = '<p class="empty-msg">No lyrics loaded.</p>';
+    hEl.style.display = 'none'; return;
+  }
+
+  clearBrowseActive();
+  let rx; try { rx = mkRx(term); } catch { return; }
+
+  const titleMatches = [], lyricMatches = [];
+  let totL = 0, totT = 0;
+
+  for (const song of songs) {
+    if (origOnly && !song.is_original) continue;
+    rx.lastIndex = 0;
+    const titleHit = rx.test(song.title);
+
+    const lyricHits = [];
+    const seenLines = new Set();
+    for (const ver of song.versions) {
+      for (const line of ver.lines) {
+        if (!line) continue;
+        rx.lastIndex = 0;
+        if (rx.test(line) && !seenLines.has(line)) {
+          seenLines.add(line);
+          lyricHits.push({ line, jesseWrote: ver.jesse_wrote });
+        }
+      }
+    }
+
+    const transHits = [];
+    if (useTrans) {
+      for (const vt of song.video_transcripts) {
+        for (const seg of vt.segments) {
+          rx.lastIndex = 0;
+          if (rx.test(seg.text)) {
+            const tSecs = Math.max(0, seg.start - 3);
+            transHits.push({
+              seg,
+              tcUrl: `${vt.video_url}&t=${Math.floor(tSecs)}s`
+            });
+          }
+        }
+      }
+    }
+
+    if (titleHit || lyricHits.length || transHits.length) {
+      const entry = { song, lyricHits, transHits, titleHit };
+      totL += lyricHits.length; totT += transHits.length;
+      if (titleHit) titleMatches.push(entry); else lyricMatches.push(entry);
+    }
+  }
+
+  const groups = [...titleMatches, ...lyricMatches];
+  if (!groups.length) {
+    hEl.style.display = 'none';
+    rEl.innerHTML = `<p class="empty-msg">No matches for "<em>${xss(term)}</em>".</p>`;
+    return;
+  }
+
+  hEl.style.display = 'block';
+  hEl.textContent = `Results for "${term}"`;
+
+  const html = groups.map(({song, lyricHits, transHits, titleHit}) => {
+    const idx = songs.indexOf(song);
+    const tagHtml = song.is_original
+      ? ''
+      : `<span class="sg-tag cover">Cover</span>`;
+    const lCount = lyricHits.length, tCount = transHits.length;
+    const countStr = [lCount ? `${lCount}L` : '', tCount ? `${tCount}V` : ''].filter(Boolean).join(' ');
+
+    const lyricHtml = lyricHits.map(({line, jesseWrote}) => {
+      const badge = jesseWrote
+        ? `<span style="font-family:'Special Elite',monospace;font-size:0.55rem;color:var(--gold);margin-left:0.4rem;border:1px solid var(--gold);padding:0 0.3rem;">Jesse's</span>`
+        : '';
+      return `<div class="ll">${hl(line, mkRx(term))}${badge}</div>`;
+    }).join('');
+
+    const transHtml = transHits.length ? `
+      <div class="section-label">▸ video · spoken/sung</div>
+      ${transHits.map(({seg, tcUrl}) =>
+        `<div class="tl">
+          <span class="tl-text">${hl(seg.text, mkRx(term))}</span>
+          <a class="tc-link" href="${xss(tcUrl)}" target="_blank" rel="noopener">▶ ${fmtTime(seg.start)}</a>
+        </div>`
+      ).join('')}` : '';
+
+    return `<div class="sg">
+      <div class="sg-head">
+        <span class="sg-name" onclick="openPanel(${idx})">${hl(song.title, mkRx(term))}</span>
+        ${tagHtml}
+        <span class="sg-count">${countStr}</span>
+      </div>
+      ${titleHit && !lCount && !tCount ? '<div class="section-label" style="color:var(--ink-faded);font-style:italic;">▸ title match</div>' : ''}
+      ${lCount ? '<div class="section-label">▸ lyrics</div>' : ''}
+      ${lyricHtml}
+      ${transHtml}
+    </div>`;
+  }).join('');
+
+  const sumParts = [];
+  if (totL) sumParts.push(`${totL} lyric line${totL!==1?'s':''}`);
+  if (totT) sumParts.push(`${totT} video moment${totT!==1?'s':''}`);
+  rEl.innerHTML = html +
+    `<div class="summary">${sumParts.join(' · ')} across ${groups.length} song${groups.length!==1?'s':''}</div>`;
+}
+
+// ── Detail Panel ──────────────────────────────────────────────────────────────
+
+function openPanel(idx) {
+  const song = songs[idx];
+  if (!song) return;
+
+  document.getElementById('dpTitle').textContent = song.title;
+
+  let dateStr = '';
+  if (song.date) {
+    try {
+      dateStr = String(new Date(song.date).getFullYear() || song.date);
+    } catch {}
+  }
+
+  document.getElementById('dpDate').textContent = dateStr;
+
+  const tag = document.getElementById('dpTag');
+  tag.textContent = song.is_original ? 'Original' : 'Cover';
+  tag.className = 'dp-tag' + (song.is_original ? '' : ' cover');
+
+  const artist = (song.cover_artist || '').trim();
+  const artistOk = artist && !artist.startsWith('#') && artist.length < 80;
+
+  const coverEl = document.getElementById('dpCoverArtist');
+  coverEl.textContent =
+    (!song.is_original && artistOk)
+      ? `Song by ${artist}`
+      : '';
+
+  const c = song.completeness || {};
+
+  const inc = document.getElementById('dpIncomplete');
+  inc.textContent =
+    (!c.has_lyrics && !c.has_video)
+      ? '⚠ No lyrics or video found yet'
+      : !c.has_lyrics
+      ? '⚠ Lyrics not yet transcribed'
+      : !c.has_video
+      ? '⚠ No video linked yet'
+      : '';
+
+  // Build tabs
+  const tabsEl = document.getElementById('dpTabs');
+  tabsEl.innerHTML = '';
+
+  song.versions.forEach(ver => {
+    const btn = document.createElement('button');
+
+    btn.className =
+      'tab-btn' + (ver.jesse_wrote ? ' jesse-tab' : '');
+
+    btn.textContent =
+      ver.id === 'main'
+        ? 'Lyrics'
+        : ver.label;
+
+    btn.dataset.vid = ver.id;
+    btn.onclick = () => renderTab(idx, ver.id);
+
+    tabsEl.appendChild(btn);
+  });
+
+  {
+    const btn = document.createElement('button');
+
+    btn.className = 'tab-btn';
+    btn.textContent = 'Variations';
+    btn.dataset.vid = '__variations__';
+
+    btn.onclick = () => renderTab(idx, '__variations__');
+
+    tabsEl.appendChild(btn);
+  }
+
+  renderTab(
+    idx,
+    song.versions[0]?.id || '__variations__'
+  );
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('detailPanel').classList.add('open');
+
+  document.body.style.overflow = 'hidden';
+}
+
+/* ---------------------------------------------------
+   HARDENED YOUTUBE ID EXTRACTION
+--------------------------------------------------- */
+function extractVid(url) {
+  if (!url) return null;
+
+  try {
+    const u = new URL(url);
+
+    let id = null;
+
+    // youtube.com/watch?v=
+    id = u.searchParams.get('v');
+
+    // youtu.be/<id>
+    if (!id && u.hostname.includes('youtu.be')) {
+      id = u.pathname.slice(1);
+    }
+
+    // youtube.com/embed/<id>
+    if (!id && u.pathname.includes('/embed/')) {
+      id = u.pathname.split('/embed/')[1];
+    }
+
+    // youtube.com/shorts/<id>
+    if (!id && u.pathname.includes('/shorts/')) {
+      id = u.pathname.split('/shorts/')[1];
+    }
+
+    // remove extra params/slashes
+    if (id) {
+      id = id.split(/[?&/]/)[0].trim();
+    }
+
+    // validate YouTube ID
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
+      console.warn('Invalid YouTube ID:', id, 'from URL:', url);
+      return null;
+    }
+
+    return id;
+  } catch (err) {
+    console.warn('Failed to parse video URL:', url, err);
+    return null;
+  }
+}
+
+/* ---------------------------------------------------
+   EMBED BUILDER
+--------------------------------------------------- */
+function buildEmbedHtml(song, ver) {
+  const vid =
+    ver?.video_id ||
+    song.versions.find(v => v.video_id)?.video_id ||
+    (song.video_urls.length
+      ? extractVid(song.video_urls[0])
+      : null);
+
+  if (!vid) {
+    console.warn('No valid video ID found:', song.title);
+    return '';
+  }
+
+  console.log('Embedding video ID:', vid);
+
+  // You can switch to youtube.com if nocookie fails
+  const src =
+    `https://www.youtube-nocookie.com/embed/${vid}?playsinline=1&rel=0&modestbranding=1`;
+
+  return `
+    <div class="dp-embed">
+      <iframe
+        width="100%"
+        height="315"
+        src="${xss(src)}"
+        frameborder="0"
+        allowfullscreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin">
+      </iframe>
+    </div>
+  `;
+}
+
+/* ---------------------------------------------------
+   VARIATIONS TAB
+--------------------------------------------------- */
+function buildVariationsHtml(song) {
+  const parts = [];
+  const seenVids = new Set();
+  const recRows = [];
+
+  for (const v of song.versions) {
+    if (v.video_id && !seenVids.has(v.video_id)) {
+      seenVids.add(v.video_id);
+
+      const label =
+        v.id === 'main'
+          ? 'Main recording'
+          : v.label;
+
+      const badge = v.jesse_wrote
+        ? ` <span style="color:var(--gold);font-size:0.6em;border:1px solid var(--gold);padding:0 0.25rem;vertical-align:middle;">Jesse's lyrics</span>`
+        : '';
+
+      recRows.push(`
+        <div class="var-row">
+          <a class="var-link"
+             href="${xss(v.video_url)}"
+             target="_blank"
+             rel="noopener">
+             ↗ ${xss(shortUrl(v.video_url))}
+          </a>
+
+          <span class="var-label">
+            ${xss(label)}${badge}
+          </span>
+        </div>
+      `);
+    }
+  }
+
+  for (const u of (song.video_urls || [])) {
+    const vid = extractVid(u);
+
+    if (vid && !seenVids.has(vid)) {
+      seenVids.add(vid);
+
+      recRows.push(`
+        <div class="var-row">
+          <a class="var-link"
+             href="${xss(u)}"
+             target="_blank"
+             rel="noopener">
+             ↗ ${xss(shortUrl(u))}
+          </a>
+        </div>
+      `);
+    }
+  }
+
+  if (recRows.length) {
+    parts.push(`
+      <div class="var-section">
+        <div class="var-section-title">
+          Recordings
+        </div>
+
+        ${recRows.join('')}
+      </div>
+    `);
+  }
+
+  if (song.url) {
+    parts.push(`
+      <div class="var-section">
+        <div class="var-section-title">
+          Fan site
+        </div>
+
+        <div class="var-row">
+          <a class="var-link"
+             href="${xss(song.url)}"
+             target="_blank"
+             rel="noopener">
+             ↗ jessewellesworld.com
+          </a>
+
+          <span class="var-label">
+            Annotations, show history &amp; more
+          </span>
+        </div>
+      </div>
+    `);
+  }
+
+  return parts.length
+    ? parts.join('')
+    : `
+      <p style="font-style:italic;color:var(--ink-light);padding:0.5rem 0;">
+        No recordings linked yet.
+      </p>
+    `;
+}
+
+/* ---------------------------------------------------
+   TAB RENDERING
+--------------------------------------------------- */
+function renderTab(idx, tabId) {
+  const song = songs[idx];
+
+  document.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle(
+      'active',
+      b.dataset.vid === tabId
+    )
+  );
+
+  const bodyEl = document.getElementById('dpBody');
+
+  let html = '';
+
+  if (tabId === '__variations__') {
+
+    html = buildVariationsHtml(song);
+
+  } else {
+
+    const ver = song.versions.find(v => v.id === tabId);
+
+    if (!ver) {
+      bodyEl.innerHTML = '';
+      return;
+    }
+
+    html += buildEmbedHtml(song, ver);
+
+    if (ver.jesse_wrote) {
+      html += `
+        <div class="jesse-badge">
+          ✎ Jesse's own lyrics
+        </div>
+      `;
+    }
+
+    if (ver.lines.length) {
+
+      let rx = null;
+
+      if (currentSearch) {
+        try {
+          rx = mkRx(currentSearch);
+        } catch {}
+      }
+
+      html += ver.lines.map(line => {
+
+        if (line === '') {
+          return `<div class="dp-break"></div>`;
+        }
+
+        return `
+          <div class="dp-line">
+            ${rx ? hl(line, rx) : xss(line)}
+          </div>
+        `;
+      }).join('');
+
+    } else {
+
+      html += `
+        <p style="font-style:italic;color:var(--ink-light);padding:1rem 0;">
+          No lyrics available for this version yet.
+        </p>
+      `;
+    }
+
+    // Timecode hits
+    if (ver.video_id && currentSearch) {
+
+      const transcript =
+        song.video_transcripts.find(
+          t => t.video_id === ver.video_id
+        );
+
+      if (transcript) {
+
+        let rx2 = null;
+
+        try {
+          rx2 = mkRx(currentSearch);
+        } catch {}
+
+        if (rx2) {
+
+          const hits = transcript.segments.flatMap(seg => {
+
+            rx2.lastIndex = 0;
+
+            if (!rx2.test(seg.text)) {
+              return [];
+            }
+
+            // FIXED timestamp URL builder
+            const sep =
+              ver.video_url.includes('?')
+                ? '&'
+                : '?';
+
+            const tcUrl =
+              `${ver.video_url}${sep}t=${Math.floor(Math.max(0, seg.start - 3))}s`;
+
+            return [`
+              <div class="dp-tc-row">
+
+                <span class="dp-tc-text">
+                  ${hl(seg.text, mkRx(currentSearch))}
+                </span>
+
+                <a class="dp-tc-link"
+                   href="${xss(tcUrl)}"
+                   target="_blank"
+                   rel="noopener">
+                   ▶ ${fmtTime(seg.start)}
+                </a>
+
+              </div>
+            `];
+          });
+
+          if (hits.length) {
+
+            html += `
+              <div class="dp-tc-section">
+
+                <div class="dp-tc-title">
+                  Moments matching "${xss(currentSearch)}"
+                </div>
+
+                ${hits.join('')}
+
+              </div>
+            `;
+          }
+        }
+      }
+    }
+  }
+
+  bodyEl.innerHTML = html;
+  bodyEl.scrollTop = 0;
+}
+
+/* ---------------------------------------------------
+   CLOSE PANEL
+--------------------------------------------------- */
+function closePanel() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detailPanel').classList.remove('open');
+
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closePanel();
+  }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('q').focus();
+
+  const st = document.getElementById('loadStatus');
+  st.textContent = 'Trying to load jesse_welles_lyrics.json…';
+
+  fetch('jesse_welles_lyrics.json')
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      // reuse the same handler, fake a file-like event
+      loadJSON({ target: { files: [new File([JSON.stringify(data)], 'jesse_welles_lyrics.json', { type: 'application/json' })] } });
+    })
+    .catch(() => {
+      st.className = 'load-status';
+      st.textContent = 'No lyrics loaded — run scrape_jesse_welles.py, then load jesse_welles_lyrics.json';
+    });
+});
+</script>
+</body>
+</html>
